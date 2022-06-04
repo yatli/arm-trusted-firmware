@@ -1,0 +1,15 @@
+%gcc
+-Iplat/rockchip/common/
+-Iplat/rockchip/common/include/
+-Iplat/rockchip/common/aarch64/
+-Iplat/rockchip/common/drivers/pmu/
+-Iplat/rockchip/rk3399/
+-Iplat/rockchip/rk3399/drivers/pmu/
+-Iplat/rockchip/rk3399/drivers/pwm/
+-Iplat/rockchip/rk3399/drivers/secure/
+-Iplat/rockchip/rk3399/drivers/soc/
+-Iplat/rockchip/rk3399/drivers/dram/
+-Iplat/rockchip/rk3399/drivers/dp/
+-Iplat/rockchip/rk3399/drivers/suspend/
+-Iplat/rockchip/rk3399/include/
+-Iplat/rockchip/rk3399/include/shared/
