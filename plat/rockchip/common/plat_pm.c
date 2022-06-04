@@ -42,6 +42,7 @@ static uintptr_t rockchip_sec_entrypoint;
 #pragma weak rockchip_soc_system_off
 #pragma weak rockchip_soc_sys_pd_pwr_dn_wfi
 #pragma weak rockchip_soc_cores_pd_pwr_dn_wfi
+#pragma weak rockchip_soc_suspend_config
 
 int rockchip_soc_cores_pwr_dm_on(unsigned long mpidr, uint64_t entrypoint)
 {
@@ -124,6 +125,12 @@ void __dead2 rockchip_soc_sys_pd_pwr_dn_wfi(void)
 {
 	psci_power_down_wfi();
 }
+
+int rockchip_soc_suspend_config(void)
+{
+  return PSCI_E_NOT_SUPPORTED;
+}
+
 
 /*******************************************************************************
  * Rockchip standard platform handler called to check the validity of the power

@@ -129,6 +129,7 @@ void __dead2 rockchip_soc_system_off(void);
 void __dead2 rockchip_soc_cores_pd_pwr_dn_wfi(
 				const psci_power_state_t *target_state);
 void __dead2 rockchip_soc_sys_pd_pwr_dn_wfi(void);
+int rockchip_soc_suspend_config(void);
 
 extern const unsigned char rockchip_power_domain_tree_desc[];
 
