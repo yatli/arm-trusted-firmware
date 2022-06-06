@@ -1,4 +1,11 @@
 %gcc
+-DIMAGE_BL31
+-I./
+-I./common/
+-I./common/aarch64/
+-I./include/
+-I./include/common/
+-I./include/arch/aarch64/
 -Iplat/rockchip/common/
 -Iplat/rockchip/common/include/
 -Iplat/rockchip/common/aarch64/

@@ -43,3 +43,5 @@ tags
 
 # Node.js
 node_modules/
+
+.ccls-cache

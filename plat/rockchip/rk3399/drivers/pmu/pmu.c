@@ -32,6 +32,9 @@
 #include <soc.h>
 #include <suspend.h>
 
+static void cpi_config_sleep(void);
+static void cpi_config_resume(void);
+
 DEFINE_BAKERY_LOCK(rockchip_pd_lock);
 
 static uint32_t cpu_warm_boot_addr;
@@ -856,35 +859,80 @@ static void sys_slp_config(void)
 		      BIT_WITH_WMSK(PMU_CLR_CORE_L_HW) |
 		      BIT_WITH_WMSK(PMU_CLR_CORE_L_2GIC_HW) |
 		      BIT_WITH_WMSK(PMU_CLR_GIC2_CORE_L_HW));
+  // rkbin default:  
+  // 0x1477bf39
+  // 0b10100011101111011111100111001
+  // "manually" executed with PBP example:
+  // 0x1477bf79 or 0x1466bf79
+  // 0b10100011101111011111101111001
+		       
+  // upstream  rkbin PBP
+	// 1         1     1    PMU_PWR_MODE_EN
+	// 1         0     0    PMU_WKUP_RST_EN,
+	// 1         0     0    PMU_INPUT_CLAMP_EN,
+	// 1         1     1    PMU_OSC_DIS,
+
+	// 1         1     1    PMU_ALIVE_USE_LF,
+	// 1         1     1    PMU_PMU_USE_LF,
+	// 1         0     1    PMU_POWER_OFF_REQ_CFG,
+	// 0         0     0    PMU_CHIP_PD_EN,
+
+	// 1         1     1    PMU_PLL_PD_EN,
+	// 1         1     1    PMU_CPU0_PD_EN,
+	// 1         1     1    PMU_L2_FLUSH_EN,
+	// 1         1     1    PMU_L2_IDLE_EN,
+
+	// 1         1     1    PMU_SCU_PD_EN,
+	// 1         1     1    PMU_CCI_PD_EN,
+	// 1         0     0    PMU_PERILP_PD_EN,
+	// 1         1     1    PMU_CENTER_PD_EN,
+
+	// 1         1     1    PMU_SREF0_ENTER_EN,
+	// 1         1     1    PMU_DDRC0_GATING_EN,
+	// 1         1     1    PMU_DDRIO0_RET_EN,
+	// 1         0     0    PMU_DDRIO0_RET_DE_REQ,
+
+	// 1         1     1    PMU_SREF1_ENTER_EN,
+	// 1         1     1    PMU_DDRC1_GATING_EN,
+	// 1         1     1    PMU_DDRIO1_RET_EN,
+	// 1         0     0    PMU_DDRIO1_RET_DE_REQ,
+
+	// 1         0     0    PMU_CLK_CENTER_SRC_GATE_EN = 26,
+	// 1         0     0    PMU_CLK_PERILP_SRC_GATE_EN,
+
+	// 1         1     1    PMU_CLK_CORE_SRC_GATE_EN,
+	// 0         0     0    PMU_DDRIO_RET_HW_DE_REQ,
+	// 0         1     1    PMU_SLP_OUTPUT_CFG,
+	// 0         0     0    PMU_MAIN_CLUSTER,
 
 	slp_mode_cfg = BIT(PMU_PWR_MODE_EN) |
-		       BIT(PMU_WKUP_RST_EN) |
-		       BIT(PMU_INPUT_CLAMP_EN) |
+		       BIT(PMU_OSC_DIS) |
+		       BIT(PMU_ALIVE_USE_LF) |
+		       BIT(PMU_PMU_USE_LF) |
 		       BIT(PMU_POWER_OFF_REQ_CFG) |
+		       BIT(PMU_PLL_PD_EN) |
 		       BIT(PMU_CPU0_PD_EN) |
 		       BIT(PMU_L2_FLUSH_EN) |
 		       BIT(PMU_L2_IDLE_EN) |
 		       BIT(PMU_SCU_PD_EN) |
 		       BIT(PMU_CCI_PD_EN) |
-		       BIT(PMU_CLK_CORE_SRC_GATE_EN) |
-		       BIT(PMU_ALIVE_USE_LF) |
-		       BIT(PMU_SREF0_ENTER_EN) |
-		       BIT(PMU_SREF1_ENTER_EN) |
-		       BIT(PMU_DDRC0_GATING_EN) |
-		       BIT(PMU_DDRC1_GATING_EN) |
-		       BIT(PMU_DDRIO0_RET_EN) |
-		       BIT(PMU_DDRIO0_RET_DE_REQ) |
-		       BIT(PMU_DDRIO1_RET_EN) |
-		       BIT(PMU_DDRIO1_RET_DE_REQ) |
 		       BIT(PMU_CENTER_PD_EN) |
-		       BIT(PMU_PERILP_PD_EN) |
-		       BIT(PMU_CLK_PERILP_SRC_GATE_EN) |
-		       BIT(PMU_PLL_PD_EN) |
-		       BIT(PMU_CLK_CENTER_SRC_GATE_EN) |
-		       BIT(PMU_OSC_DIS) |
-		       BIT(PMU_PMU_USE_LF);
+		       BIT(PMU_SREF0_ENTER_EN) |
+		       BIT(PMU_DDRC0_GATING_EN) |
+		       BIT(PMU_DDRIO0_RET_EN) |
+		       BIT(PMU_SREF1_ENTER_EN) |
+		       BIT(PMU_DDRC1_GATING_EN) |
+		       BIT(PMU_DDRIO1_RET_EN) |
+		       BIT(PMU_CLK_CORE_SRC_GATE_EN) |
+		       BIT(PMU_SLP_OUTPUT_CFG);
 
 	mmio_setbits_32(PMU_BASE + PMU_WKUP_CFG4, BIT(PMU_GPIO_WKUP_EN));
+  // enable GPIO0_PA5 negedge wkup
+  mmio_setbits_32(PMU_BASE + PMU_WKUP_CFG1, BIT(5)); 
+  // enable GPIO0_PA5 negedge interrupt wakeup
+  mmio_setbits_32(PMU_BASE + PMU_INT_CON, BIT(PMU_PMU_INT_EN) | BIT(PMU_WKUP_GPIO0_NEG_INT_EN));
+  mmio_setbits_32(PMU_BASE + PMU_GPIO0_NEG_INT_CON, BIT(5)); 
+                                                   
 	mmio_write_32(PMU_BASE + PMU_PWRMODE_CON, slp_mode_cfg);
 
 	mmio_write_32(PMU_BASE + PMU_PLL_CON, PLL_PD_HW);
@@ -1413,6 +1461,9 @@ int rockchip_soc_sys_pwr_dm_suspend(void)
 	suspend_apio();
 	suspend_gpio();
 	suspend_uart();
+
+  cpi_config_sleep();
+
 	grf_register_save();
 	cru_register_save();
 	sram_save();
@@ -1623,4 +1674,124 @@ void plat_rockchip_pmu_init(void)
 
 	INFO("%s(%d): pd status %x\n", __func__, __LINE__,
 	     mmio_read_32(PMU_BASE + PMU_PWRDN_ST));
+}
+
+/*
+static void cpi_fan_bit(int bit) {
+  // start
+  // protocol: HIGH 3 sec
+  gpio_set_value(96, 1);
+  udelay(3000000);
+  // protocol: LOW 3 sec
+  gpio_set_value(96, 0);
+  udelay(3000000);
+
+  // each bit is transmitted in 1sec.
+  // bit set   = 800ms high 200ms low
+  // bit clear = 200ms high 800ms low
+  int dhigh = bit ? 800000 : 200000;
+  int dlow = bit ? 200000: 800000;
+  for (int i = 0; i < 4; ++i) {
+    gpio_set_value(96, 1);
+    udelay(dhigh);
+    gpio_set_value(96, 0);
+    udelay(dlow);
+  }
+} 
+*/
+
+static void cpi_config_sleep(void) {
+  // hack:
+  //
+  // GPIO0_A5       [in]     PWR_KEY_L       HIGH        !! Solder R124
+  // GPIO1_C1       [out]    CPU_B_SLEEP     HIGH        PBP example.
+  // GPIO1_B6       [out]    GPU_SLEEP       HIGH        PBP example.
+  // GPIO1_A5       [out]    PMIC_SLEEP_H    HIGH        PBP schematics
+  //
+  // port = pin / 32
+  // num = pin % 32
+  // bank = num / 8
+  // id = num % 8
+  // num = bank * 8 + id = 5
+  // pin = port * 32 + num = 5
+ 
+  // GPIO0_PA5: port = 0, bank = 0(A), id = 5
+  // num = bank * 8 + id = 5
+  // pin = port * 32 + num = 5
+  //    gpio_set_value(5, 1);
+  //    gpio_set_direction(5, GPIO_DIR_IN);
+  //    udelay(1);
+
+  // GPIO3_A0 is the FAN, port = 3, bank = 0(A), id = 0
+  // num = 0*8+0 = 0
+  // pin = 3 * 32 + 0 = 96
+  gpio_set_value(96, 0); // Turns off the fan
+  gpio_set_direction(96, GPIO_DIR_OUT);
+  udelay(1);
+
+  // see: https://github.com/ARM-software/arm-trusted-firmware/blob/5e529e32ee6cf6ac9203ada4fade49a47893fa51/plat/rockchip/rk3399/drivers/pwm/pwm.c#L61
+  int iomux = mmio_read_32(PMUGRF_BASE + PMUGRF_GPIO0A_IOMUX);
+  if (((iomux >> PMUGRF_GPIO0A5_IOMUX_SHIFT) & GRF_IOMUX_2BIT_MASK) != GRF_IOMUX_GPIO) {
+    iomux = BITS_WITH_WMASK(GRF_IOMUX_GPIO, GRF_IOMUX_2BIT_MASK, PMUGRF_GPIO0A5_IOMUX_SHIFT);
+    mmio_write_32(PMUGRF_BASE + PMUGRF_GPIO0A_IOMUX, iomux);
+  }
+  udelay(1);
+  /*
+  iomux = mmio_read_32(PMUGRF_BASE + PMUGRF_GPIO0A_IOMUX);
+  udelay(1);
+  for (int i = 0; i < 32; ++i) {
+    cpi_fan_bit(iomux & 1);
+    iomux >>= 1;
+  }
+  */
+
+  gpio_set_direction(5, GPIO_DIR_IN);
+  gpio_set_pull(5, GPIO_PULL_UP);
+  udelay(1);
+
+  /*
+  while (true) {
+    int v = gpio_get_value(5);
+    gpio_set_value(96, v);
+    udelay(100000);
+  }
+
+  */
+
+  // GPIO1_C1 is CPU_B_SLEEP: port = 1, bank = 2(C), id = 1
+  // num = 2*8+1 = 17
+  // pin = 1 * 32 + 17 = 49
+  gpio_set_value(49, 1);
+  gpio_set_direction(49, GPIO_DIR_OUT);
+  udelay(1);
+
+  // GPIO1_B6 is GPU_SLEEP: port = 1, bank = 1(B), id = 6
+  // num = 1 * 8 + 6 = 14
+  // pin = 1 * 32 + 14 = 46
+  gpio_set_value(46, 1);
+  gpio_set_direction(46, GPIO_DIR_OUT);
+  udelay(1);
+  
+  // GPIO1_A5 is PMIC_SLEEP_H: port = 1, bank = 0(A), id = 5
+  // num = 0 * 8 + 5 = 5
+  // pin = 1 * 32 + 5 = 37
+  gpio_set_value(37, 1);
+  gpio_set_direction(37, GPIO_DIR_OUT);
+  udelay(1);
+
+  // GPIO4_C4 is UART TX (with led), port = 4, bank = 2(C), id = 4
+  // num = 2 * 8 + 4 = 20
+  // pin = 4 * 32 + 20 = 148
+  // doesn't work
+
+  // !! see http://opensource.rock-chips.com/images/e/ee/Rockchip_RK3399TRM_V1.4_Part1-20170408.pdf 
+  // Page 496, PMU_WAKEUP_CFG0
+}
+
+static void cpi_config_resume() {
+  while (true) {
+    int v = gpio_get_value(5);
+    gpio_set_value(96, v);
+    udelay(100000);
+  }
 }

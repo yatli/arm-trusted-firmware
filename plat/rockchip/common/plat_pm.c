@@ -17,6 +17,8 @@
 
 #include <plat_private.h>
 
+#include <drivers/gpio.h>
+
 /* Macros to read the rk power domain state */
 #define RK_CORE_PWR_STATE(state) \
 	((state)->pwr_domain_state[MPIDR_AFFLVL0])
