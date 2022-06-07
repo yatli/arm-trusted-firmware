@@ -21,6 +21,9 @@
 
 #include "psci_private.h"
 
+#include <drivers/gpio.h>
+#include <drivers/delay_timer.h>
+
 /*******************************************************************************
  * This function does generic and platform specific operations after a wake-up
  * from standby/retention states at multiple power levels.

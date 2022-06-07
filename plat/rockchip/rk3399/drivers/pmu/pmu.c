@@ -862,50 +862,57 @@ static void sys_slp_config(void)
   // rkbin default:  
   // 0x1477bf39
   // 0b10100011101111011111100111001
+  //      xx (reserved)
   // "manually" executed with PBP example:
   // 0x1477bf79 or 0x1466bf79
-  // 0b10100011101111011111101111001
+  // 0b1010001110111 1011111101111001
+  // 0b1010001100110 1011111101111001
+  //      xx   ^   ^
 		       
-  // upstream  rkbin PBP
-	// 1         1     1    PMU_PWR_MODE_EN
-	// 1         0     0    PMU_WKUP_RST_EN,
-	// 1         0     0    PMU_INPUT_CLAMP_EN,
-	// 1         1     1    PMU_OSC_DIS,
+  // upstream  rkbin 77  66
+	// 1         1     1   1   PMU_PWR_MODE_EN
+	// 1         0     0   0   PMU_WKUP_RST_EN,
+	// 1         0     0   0   PMU_INPUT_CLAMP_EN,
+	// 1         1     1   1   PMU_OSC_DIS,
 
-	// 1         1     1    PMU_ALIVE_USE_LF,
-	// 1         1     1    PMU_PMU_USE_LF,
-	// 1         0     1    PMU_POWER_OFF_REQ_CFG,
-	// 0         0     0    PMU_CHIP_PD_EN,
+	// 1         1     1   1   PMU_ALIVE_USE_LF,
+	// 1         1     1   1   PMU_PMU_USE_LF,
+	// 1         0     1   1   PMU_POWER_OFF_REQ_CFG,
+	// 0         0     0   0   PMU_CHIP_PD_EN,
 
-	// 1         1     1    PMU_PLL_PD_EN,
-	// 1         1     1    PMU_CPU0_PD_EN,
-	// 1         1     1    PMU_L2_FLUSH_EN,
-	// 1         1     1    PMU_L2_IDLE_EN,
+	// 1         1     1   1   PMU_PLL_PD_EN,
+	// 1         1     1   1   PMU_CPU0_PD_EN,
+	// 1         1     1   1   PMU_L2_FLUSH_EN,
+	// 1         1     1   1   PMU_L2_IDLE_EN,
 
-	// 1         1     1    PMU_SCU_PD_EN,
-	// 1         1     1    PMU_CCI_PD_EN,
-	// 1         0     0    PMU_PERILP_PD_EN,
-	// 1         1     1    PMU_CENTER_PD_EN,
+	// 1         1     1   1   PMU_SCU_PD_EN,
+	// 1         1     1   1   PMU_CCI_PD_EN,
+	// 1         0     0   0   PMU_PERILP_PD_EN,
+	// 1         1     1   1   PMU_CENTER_PD_EN,
 
-	// 1         1     1    PMU_SREF0_ENTER_EN,
-	// 1         1     1    PMU_DDRC0_GATING_EN,
-	// 1         1     1    PMU_DDRIO0_RET_EN,
-	// 1         0     0    PMU_DDRIO0_RET_DE_REQ,
+	// 1         1     1   0   PMU_SREF0_ENTER_EN,
+	// 1         1     1   1   PMU_DDRC0_GATING_EN,
+	// 1         1     1   1   PMU_DDRIO0_RET_EN,
+	// 1         0     0   0   PMU_DDRIO0_RET_DE_REQ,
 
-	// 1         1     1    PMU_SREF1_ENTER_EN,
-	// 1         1     1    PMU_DDRC1_GATING_EN,
-	// 1         1     1    PMU_DDRIO1_RET_EN,
-	// 1         0     0    PMU_DDRIO1_RET_DE_REQ,
+	// 1         1     1   0   PMU_SREF1_ENTER_EN,
+	// 1         1     1   1   PMU_DDRC1_GATING_EN,
+	// 1         1     1   1   PMU_DDRIO1_RET_EN,
+	// 1         0     0   0   PMU_DDRIO1_RET_DE_REQ,
 
-	// 1         0     0    PMU_CLK_CENTER_SRC_GATE_EN = 26,
-	// 1         0     0    PMU_CLK_PERILP_SRC_GATE_EN,
+  // x
+  // x
+	// 1         1     1   1   PMU_CLK_CENTER_SRC_GATE_EN = 26,
+	// 1         0     0   0   PMU_CLK_PERILP_SRC_GATE_EN,
 
-	// 1         1     1    PMU_CLK_CORE_SRC_GATE_EN,
-	// 0         0     0    PMU_DDRIO_RET_HW_DE_REQ,
-	// 0         1     1    PMU_SLP_OUTPUT_CFG,
-	// 0         0     0    PMU_MAIN_CLUSTER,
+	// 1         1     1   1   PMU_CLK_CORE_SRC_GATE_EN,
+	// 0         0     0   0   PMU_DDRIO_RET_HW_DE_REQ,
+	// 0         0     0   0   PMU_SLP_OUTPUT_CFG,
+	// 0         0     0   0   PMU_MAIN_CLUSTER,
 
 	slp_mode_cfg = BIT(PMU_PWR_MODE_EN) |
+		       BIT(PMU_WKUP_RST_EN) | // upstream
+		       BIT(PMU_INPUT_CLAMP_EN) | // upstream
 		       BIT(PMU_OSC_DIS) |
 		       BIT(PMU_ALIVE_USE_LF) |
 		       BIT(PMU_PMU_USE_LF) |
@@ -916,15 +923,19 @@ static void sys_slp_config(void)
 		       BIT(PMU_L2_IDLE_EN) |
 		       BIT(PMU_SCU_PD_EN) |
 		       BIT(PMU_CCI_PD_EN) |
+		       BIT(PMU_PERILP_PD_EN) | // upstream
 		       BIT(PMU_CENTER_PD_EN) |
-		       BIT(PMU_SREF0_ENTER_EN) |
+           BIT(PMU_SREF0_ENTER_EN) |
 		       BIT(PMU_DDRC0_GATING_EN) |
 		       BIT(PMU_DDRIO0_RET_EN) |
-		       BIT(PMU_SREF1_ENTER_EN) |
+		       BIT(PMU_DDRIO0_RET_DE_REQ) | // upstream
+           BIT(PMU_SREF1_ENTER_EN) |
 		       BIT(PMU_DDRC1_GATING_EN) |
 		       BIT(PMU_DDRIO1_RET_EN) |
-		       BIT(PMU_CLK_CORE_SRC_GATE_EN) |
-		       BIT(PMU_SLP_OUTPUT_CFG);
+		       BIT(PMU_DDRIO1_RET_DE_REQ) | // upstream
+		       BIT(PMU_CLK_CENTER_SRC_GATE_EN) |
+		       BIT(PMU_CLK_PERILP_SRC_GATE_EN) | // upstream
+		       BIT(PMU_CLK_CORE_SRC_GATE_EN);
 
 	mmio_setbits_32(PMU_BASE + PMU_WKUP_CFG4, BIT(PMU_GPIO_WKUP_EN));
   // enable GPIO0_PA5 negedge wkup
@@ -1481,6 +1492,9 @@ int rockchip_soc_sys_pwr_dm_resume(void)
 	cru_register_restore();
 	grf_register_restore();
 	wdt_register_restore();
+
+  cpi_config_resume();
+
 	resume_uart();
 	resume_apio();
 	resume_gpio();
@@ -1697,7 +1711,7 @@ static void cpi_fan_bit(int bit) {
     gpio_set_value(96, 0);
     udelay(dlow);
   }
-} 
+}
 */
 
 static void cpi_config_sleep(void) {
@@ -1749,35 +1763,27 @@ static void cpi_config_sleep(void) {
   gpio_set_pull(5, GPIO_PULL_UP);
   udelay(1);
 
-  /*
-  while (true) {
-    int v = gpio_get_value(5);
-    gpio_set_value(96, v);
-    udelay(100000);
-  }
-
-  */
-
   // GPIO1_C1 is CPU_B_SLEEP: port = 1, bank = 2(C), id = 1
   // num = 2*8+1 = 17
   // pin = 1 * 32 + 17 = 49
-  gpio_set_value(49, 1);
-  gpio_set_direction(49, GPIO_DIR_OUT);
-  udelay(1);
+  /*gpio_set_value(49, 1);*/
+  /*gpio_set_direction(49, GPIO_DIR_OUT);*/
+  /*udelay(1);*/
 
   // GPIO1_B6 is GPU_SLEEP: port = 1, bank = 1(B), id = 6
   // num = 1 * 8 + 6 = 14
   // pin = 1 * 32 + 14 = 46
-  gpio_set_value(46, 1);
-  gpio_set_direction(46, GPIO_DIR_OUT);
-  udelay(1);
+  /*gpio_set_value(46, 1);*/
+  /*gpio_set_direction(46, GPIO_DIR_OUT);*/
+  /*udelay(1);*/
   
   // GPIO1_A5 is PMIC_SLEEP_H: port = 1, bank = 0(A), id = 5
   // num = 0 * 8 + 5 = 5
   // pin = 1 * 32 + 5 = 37
-  gpio_set_value(37, 1);
-  gpio_set_direction(37, GPIO_DIR_OUT);
-  udelay(1);
+  // XXX maybe this is supposed to be automatic.
+  /*gpio_set_value(37, 1);*/
+  /*gpio_set_direction(37, GPIO_DIR_OUT);*/
+  /*udelay(1);*/
 
   // GPIO4_C4 is UART TX (with led), port = 4, bank = 2(C), id = 4
   // num = 2 * 8 + 4 = 20
@@ -1789,6 +1795,8 @@ static void cpi_config_sleep(void) {
 }
 
 static void cpi_config_resume() {
+  return;
+
   while (true) {
     int v = gpio_get_value(5);
     gpio_set_value(96, v);

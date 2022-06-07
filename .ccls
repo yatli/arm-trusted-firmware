@@ -1,5 +1,7 @@
 %gcc
 -DIMAGE_BL31
+-DDEBUG
+-DLOG_LEVEL=40
 -I./
 -I./common/
 -I./common/aarch64/
