@@ -331,6 +331,7 @@ static uint32_t pmu_powerdomain_state;
 
 static void pmu_power_domains_suspend(void)
 {
+  INFO("%s(%d)\n", __func__, __LINE__);
 	clk_gate_con_save();
 	clk_gate_con_disable();
 	qos_save();
@@ -359,6 +360,7 @@ static void pmu_power_domains_suspend(void)
 
 static void pmu_power_domains_resume(void)
 {
+  INFO("%s(%d)\n", __func__, __LINE__);
 	clk_gate_con_save();
 	clk_gate_con_disable();
 	if (!(pmu_powerdomain_state & BIT(PD_VDU)))
@@ -405,6 +407,7 @@ static void pmu_power_domains_resume(void)
 
 void pmu_power_domains_on(void)
 {
+  INFO("%s(%d)\n", __func__, __LINE__);
 	clk_gate_con_disable();
 	pmu_set_power_domain(PD_VDU, pmu_pd_on);
 	pmu_set_power_domain(PD_VCODEC, pmu_pd_on);
@@ -446,6 +449,7 @@ void rk3399_flush_l2_b(void)
 
 static void pmu_scu_b_pwrdn(void)
 {
+  INFO("%s(%d)\n", __func__, __LINE__);
 	uint32_t wait_cnt = 0;
 
 	if ((mmio_read_32(PMU_BASE + PMU_PWRDN_ST) &
@@ -471,17 +475,20 @@ static void pmu_scu_b_pwrdn(void)
 
 static void pmu_scu_b_pwrup(void)
 {
+  INFO("%s(%d)\n", __func__, __LINE__);
 	mmio_clrbits_32(PMU_BASE + PMU_SFT_CON, BIT(ACINACTM_CLUSTER_B_CFG));
 }
 
 static inline uint32_t get_cpus_pwr_domain_cfg_info(uint32_t cpu_id)
 {
+  INFO("%s(%d)\n", __func__, __LINE__);
 	assert(cpu_id < PLATFORM_CORE_COUNT);
 	return core_pm_cfg_info[cpu_id];
 }
 
 static inline void set_cpus_pwr_domain_cfg_info(uint32_t cpu_id, uint32_t value)
 {
+  INFO("%s(%d)\n", __func__, __LINE__);
 	assert(cpu_id < PLATFORM_CORE_COUNT);
 	core_pm_cfg_info[cpu_id] = value;
 #if !USE_COHERENT_MEM
@@ -492,6 +499,7 @@ static inline void set_cpus_pwr_domain_cfg_info(uint32_t cpu_id, uint32_t value)
 
 static int cpus_power_domain_on(uint32_t cpu_id)
 {
+  INFO("%s(%d)\n", __func__, __LINE__);
 	uint32_t cfg_info;
 	uint32_t cpu_pd = PD_CPUL0 + cpu_id;
 	/*
@@ -533,6 +541,7 @@ static int cpus_power_domain_off(uint32_t cpu_id, uint32_t pd_cfg)
 {
 	uint32_t cpu_pd;
 	uint32_t core_pm_value;
+  INFO("%s(%d)\n", __func__, __LINE__);
 
 	cpu_pd = PD_CPUL0 + cpu_id;
 	if (pmu_power_domain_st(cpu_pd) == pmu_pd_off)
@@ -567,6 +576,7 @@ static inline void clst_pwr_domain_suspend(plat_local_state_t lvl_state)
 	uint32_t cpu_id = plat_my_core_pos();
 	uint32_t pll_id, clst_st_msk, clst_st_chk_msk, pmu_st;
 
+  INFO("%s(%d)\n", __func__, __LINE__);
 	assert(cpu_id < PLATFORM_CORE_COUNT);
 
 	if (lvl_state == PLAT_MAX_OFF_STATE) {
@@ -610,6 +620,7 @@ static int clst_pwr_domain_resume(plat_local_state_t lvl_state)
 {
 	uint32_t cpu_id = plat_my_core_pos();
 	uint32_t pll_id, pll_st;
+  INFO("%s(%d)\n", __func__, __LINE__);
 
 	assert(cpu_id < PLATFORM_CORE_COUNT);
 
@@ -637,6 +648,7 @@ static void nonboot_cpus_off(void)
 	uint32_t boot_cpu, cpu;
 
 	boot_cpu = plat_my_core_pos();
+  INFO("%s(%d)\n", __func__, __LINE__);
 
 	/* turn off noboot cpus */
 	for (cpu = 0; cpu < PLATFORM_CORE_COUNT; cpu++) {
@@ -649,6 +661,7 @@ static void nonboot_cpus_off(void)
 int rockchip_soc_cores_pwr_dm_on(unsigned long mpidr, uint64_t entrypoint)
 {
 	uint32_t cpu_id = plat_core_pos_by_mpidr(mpidr);
+  INFO("%s(%d)\n", __func__, __LINE__);
 
 	assert(cpu_id < PLATFORM_CORE_COUNT);
 	assert(cpuson_flags[cpu_id] == 0);
@@ -664,6 +677,7 @@ int rockchip_soc_cores_pwr_dm_on(unsigned long mpidr, uint64_t entrypoint)
 int rockchip_soc_cores_pwr_dm_off(void)
 {
 	uint32_t cpu_id = plat_my_core_pos();
+  INFO("%s(%d)\n", __func__, __LINE__);
 
 	cpus_power_domain_off(cpu_id, core_pwr_wfi);
 
@@ -673,6 +687,7 @@ int rockchip_soc_cores_pwr_dm_off(void)
 int rockchip_soc_hlvl_pwr_dm_off(uint32_t lvl,
 				 plat_local_state_t lvl_state)
 {
+  INFO("%s(%d)\n", __func__, __LINE__);
 	if (lvl == MPIDR_AFFLVL1) {
 		clst_pwr_domain_suspend(lvl_state);
 	}
@@ -697,6 +712,7 @@ int rockchip_soc_cores_pwr_dm_suspend(void)
 
 int rockchip_soc_hlvl_pwr_dm_suspend(uint32_t lvl, plat_local_state_t lvl_state)
 {
+  INFO("%s(%d)\n", __func__, __LINE__);
 	if (lvl == MPIDR_AFFLVL1) {
 		clst_pwr_domain_suspend(lvl_state);
 	}
@@ -707,6 +723,7 @@ int rockchip_soc_hlvl_pwr_dm_suspend(uint32_t lvl, plat_local_state_t lvl_state)
 int rockchip_soc_cores_pwr_dm_on_finish(void)
 {
 	uint32_t cpu_id = plat_my_core_pos();
+  INFO("%s(%d)\n", __func__, __LINE__);
 
 	mmio_write_32(PMU_BASE + PMU_CORE_PM_CON(cpu_id),
 		      CORES_PM_DISABLE);
@@ -719,6 +736,7 @@ int rockchip_soc_hlvl_pwr_dm_on_finish(uint32_t lvl,
 	if (lvl == MPIDR_AFFLVL1) {
 		clst_pwr_domain_resume(lvl_state);
 	}
+  INFO("%s(%d)\n", __func__, __LINE__);
 
 	return PSCI_E_SUCCESS;
 }
@@ -735,6 +753,7 @@ int rockchip_soc_cores_pwr_dm_resume(void)
 
 int rockchip_soc_hlvl_pwr_dm_resume(uint32_t lvl, plat_local_state_t lvl_state)
 {
+  INFO("%s(%d)\n", __func__, __LINE__);
 	if (lvl == MPIDR_AFFLVL1) {
 		clst_pwr_domain_resume(lvl_state);
 	}
@@ -1207,6 +1226,8 @@ void suspend_uart(void)
 
 	if (uart_base == 0)
 		return;
+
+  INFO("%s(%d): uart is DOWN\n", __func__, __LINE__);
 
 	uart_save.uart_lcr = mmio_read_32(uart_base + UART_LCR);
 	uart_save.uart_ier = mmio_read_32(uart_base + UART_IER);
@@ -1690,30 +1711,6 @@ void plat_rockchip_pmu_init(void)
 	     mmio_read_32(PMU_BASE + PMU_PWRDN_ST));
 }
 
-/*
-static void cpi_fan_bit(int bit) {
-  // start
-  // protocol: HIGH 3 sec
-  gpio_set_value(96, 1);
-  udelay(3000000);
-  // protocol: LOW 3 sec
-  gpio_set_value(96, 0);
-  udelay(3000000);
-
-  // each bit is transmitted in 1sec.
-  // bit set   = 800ms high 200ms low
-  // bit clear = 200ms high 800ms low
-  int dhigh = bit ? 800000 : 200000;
-  int dlow = bit ? 200000: 800000;
-  for (int i = 0; i < 4; ++i) {
-    gpio_set_value(96, 1);
-    udelay(dhigh);
-    gpio_set_value(96, 0);
-    udelay(dlow);
-  }
-}
-*/
-
 static void cpi_config_sleep(void) {
   // hack:
   //
@@ -1750,14 +1747,6 @@ static void cpi_config_sleep(void) {
     mmio_write_32(PMUGRF_BASE + PMUGRF_GPIO0A_IOMUX, iomux);
   }
   udelay(1);
-  /*
-  iomux = mmio_read_32(PMUGRF_BASE + PMUGRF_GPIO0A_IOMUX);
-  udelay(1);
-  for (int i = 0; i < 32; ++i) {
-    cpi_fan_bit(iomux & 1);
-    iomux >>= 1;
-  }
-  */
 
   gpio_set_direction(5, GPIO_DIR_IN);
   gpio_set_pull(5, GPIO_PULL_UP);
@@ -1766,16 +1755,16 @@ static void cpi_config_sleep(void) {
   // GPIO1_C1 is CPU_B_SLEEP: port = 1, bank = 2(C), id = 1
   // num = 2*8+1 = 17
   // pin = 1 * 32 + 17 = 49
-  /*gpio_set_value(49, 1);*/
-  /*gpio_set_direction(49, GPIO_DIR_OUT);*/
-  /*udelay(1);*/
+  gpio_set_value(49, 1);
+  gpio_set_direction(49, GPIO_DIR_OUT);
+  udelay(1);
 
   // GPIO1_B6 is GPU_SLEEP: port = 1, bank = 1(B), id = 6
   // num = 1 * 8 + 6 = 14
   // pin = 1 * 32 + 14 = 46
-  /*gpio_set_value(46, 1);*/
-  /*gpio_set_direction(46, GPIO_DIR_OUT);*/
-  /*udelay(1);*/
+  gpio_set_value(46, 1);
+  gpio_set_direction(46, GPIO_DIR_OUT);
+  udelay(1);
   
   // GPIO1_A5 is PMIC_SLEEP_H: port = 1, bank = 0(A), id = 5
   // num = 0 * 8 + 5 = 5
@@ -1796,10 +1785,4 @@ static void cpi_config_sleep(void) {
 
 static void cpi_config_resume() {
   return;
-
-  while (true) {
-    int v = gpio_get_value(5);
-    gpio_set_value(96, v);
-    udelay(100000);
-  }
 }

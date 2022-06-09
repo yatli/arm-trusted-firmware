@@ -204,13 +204,19 @@ struct bl_aux_rk_apio_info *plat_get_rockchip_suspend_apio(void)
 
 static bool rk_aux_param_handler(struct bl_aux_param_header *param)
 {
+  INFO("%s: type = %lu, val = ", __func__, param->type);
+  struct bl_aux_gpio_info *p_gpio;
 	/* Store platform parameters for later processing if needed. */
 	switch (param->type) {
 	case BL_AUX_PARAM_RK_RESET_GPIO:
 		rst_gpio = ((struct bl_aux_param_gpio *)param)->gpio;
+    p_gpio = &rst_gpio;
+    INFO("GPIO  id = %d, dir = %d, polarity = %d, pull = %d\n", p_gpio->index, p_gpio->direction, p_gpio->polarity, p_gpio->pull_mode);
 		return true;
 	case BL_AUX_PARAM_RK_POWEROFF_GPIO:
 		poweroff_gpio = ((struct bl_aux_param_gpio *)param)->gpio;
+    p_gpio = &rst_gpio;
+    INFO("poweroff GPIO  id = %d, dir = %d, polarity = %d, pull = %d\n", p_gpio->index, p_gpio->direction, p_gpio->polarity, p_gpio->pull_mode);
 		return true;
 	case BL_AUX_PARAM_RK_SUSPEND_GPIO:
 		if (suspend_gpio_cnt >= ARRAY_SIZE(suspend_gpio)) {
@@ -219,11 +225,16 @@ static bool rk_aux_param_handler(struct bl_aux_param_header *param)
 		}
 		suspend_gpio[suspend_gpio_cnt++] =
 			((struct bl_aux_param_gpio *)param)->gpio;
+    p_gpio = suspend_gpio + suspend_gpio_cnt - 1;
+    INFO("suspend GPIO id = %d, dir = %d, polarity = %d, pull = %d\n", p_gpio->index, p_gpio->direction, p_gpio->polarity, p_gpio->pull_mode);
 		return true;
 	case BL_AUX_PARAM_RK_SUSPEND_APIO:
 		suspend_apio = ((struct bl_aux_param_rk_apio *)param)->apio;
+    INFO("suspend APIO %02X %02X %02X %02X %02X\n", suspend_apio.apio1, suspend_apio.apio2, suspend_apio.apio3, suspend_apio.apio4, suspend_apio.apio5);
 		return true;
 	}
+
+  INFO("Unknown\n");
 
 	return false;
 }
@@ -252,5 +263,7 @@ void params_early_setup(u_register_t plat_param_from_bl2)
 		return;
 	}
 
+  INFO("%s: begin bl_aux_params_parse\n", __func__);
 	bl_aux_params_parse(plat_param_from_bl2, rk_aux_param_handler);
+  INFO("%s: end bl_aux_params_parse\n", __func__);
 }
