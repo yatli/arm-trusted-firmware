@@ -32,8 +32,33 @@
 #include <soc.h>
 #include <suspend.h>
 
+#include <drivers/console.h>
+
+// static console_t pmu_console;
+
 static void cpi_config_sleep(void);
 static void cpi_config_resume(void);
+
+/*extern int console_16550_register(uintptr_t baseaddr, uint32_t clock, uint32_t baud, console_t *console);*/
+/*extern int console_16550_core_init(uintptr_t base, uint32_t clock, uint32_t baudrate);*/
+
+static inline void recover_console(void) {
+  return;
+
+  /*
+  // bring back uart2 iomux...
+  // 0x2 is uartdbga_sin/sout
+  mmio_write_32(GRF_BASE + GRF_GPIO4B_IOMUX,
+      BITS_WITH_WMASK(0x2, GRF_IOMUX_2BIT_MASK, GRF_GPIO4B0_IOMUX_SHIFT) |
+      BITS_WITH_WMASK(0x2, GRF_IOMUX_2BIT_MASK, GRF_GPIO4B1_IOMUX_SHIFT));
+  if (console_is_registered(&pmu_console)) {
+    // try bring back the console...
+    console_16550_core_init(UART2_BASE, 24000000, 115200);
+  } else {
+    console_16550_register(UART2_BASE, 24000000, 115200, &pmu_console);
+  }
+  */
+}
 
 DEFINE_BAKERY_LOCK(rockchip_pd_lock);
 
@@ -660,6 +685,7 @@ static void nonboot_cpus_off(void)
 
 int rockchip_soc_cores_pwr_dm_on(unsigned long mpidr, uint64_t entrypoint)
 {
+  recover_console();
 	uint32_t cpu_id = plat_core_pos_by_mpidr(mpidr);
   INFO("%s(%d)\n", __func__, __LINE__);
 
@@ -676,6 +702,7 @@ int rockchip_soc_cores_pwr_dm_on(unsigned long mpidr, uint64_t entrypoint)
 
 int rockchip_soc_cores_pwr_dm_off(void)
 {
+  recover_console();
 	uint32_t cpu_id = plat_my_core_pos();
   INFO("%s(%d)\n", __func__, __LINE__);
 
@@ -687,6 +714,7 @@ int rockchip_soc_cores_pwr_dm_off(void)
 int rockchip_soc_hlvl_pwr_dm_off(uint32_t lvl,
 				 plat_local_state_t lvl_state)
 {
+  recover_console();
   INFO("%s(%d)\n", __func__, __LINE__);
 	if (lvl == MPIDR_AFFLVL1) {
 		clst_pwr_domain_suspend(lvl_state);
@@ -697,6 +725,7 @@ int rockchip_soc_hlvl_pwr_dm_off(uint32_t lvl,
 
 int rockchip_soc_cores_pwr_dm_suspend(void)
 {
+  recover_console();
 	uint32_t cpu_id = plat_my_core_pos();
 
 	assert(cpu_id < PLATFORM_CORE_COUNT);
@@ -712,6 +741,7 @@ int rockchip_soc_cores_pwr_dm_suspend(void)
 
 int rockchip_soc_hlvl_pwr_dm_suspend(uint32_t lvl, plat_local_state_t lvl_state)
 {
+  recover_console();
   INFO("%s(%d)\n", __func__, __LINE__);
 	if (lvl == MPIDR_AFFLVL1) {
 		clst_pwr_domain_suspend(lvl_state);
@@ -722,6 +752,7 @@ int rockchip_soc_hlvl_pwr_dm_suspend(uint32_t lvl, plat_local_state_t lvl_state)
 
 int rockchip_soc_cores_pwr_dm_on_finish(void)
 {
+  recover_console();
 	uint32_t cpu_id = plat_my_core_pos();
   INFO("%s(%d)\n", __func__, __LINE__);
 
@@ -733,6 +764,7 @@ int rockchip_soc_cores_pwr_dm_on_finish(void)
 int rockchip_soc_hlvl_pwr_dm_on_finish(uint32_t lvl,
 				       plat_local_state_t lvl_state)
 {
+  recover_console();
 	if (lvl == MPIDR_AFFLVL1) {
 		clst_pwr_domain_resume(lvl_state);
 	}
@@ -743,6 +775,7 @@ int rockchip_soc_hlvl_pwr_dm_on_finish(uint32_t lvl,
 
 int rockchip_soc_cores_pwr_dm_resume(void)
 {
+  recover_console();
 	uint32_t cpu_id = plat_my_core_pos();
 
 	/* Disable core_pm */
@@ -753,6 +786,7 @@ int rockchip_soc_cores_pwr_dm_resume(void)
 
 int rockchip_soc_hlvl_pwr_dm_resume(uint32_t lvl, plat_local_state_t lvl_state)
 {
+  recover_console();
   INFO("%s(%d)\n", __func__, __LINE__);
 	if (lvl == MPIDR_AFFLVL1) {
 		clst_pwr_domain_resume(lvl_state);
@@ -880,7 +914,7 @@ static void sys_slp_config(void)
 		      BIT_WITH_WMSK(PMU_CLR_GIC2_CORE_L_HW));
   // rkbin default:  
   // 0x1477bf39
-  // 0b10100011101111011111100111001
+  // 0b1010001110111 1011111100111001
   //      xx (reserved)
   // "manually" executed with PBP example:
   // 0x1477bf79 or 0x1466bf79
@@ -909,12 +943,12 @@ static void sys_slp_config(void)
 	// 1         0     0   0   PMU_PERILP_PD_EN,
 	// 1         1     1   1   PMU_CENTER_PD_EN,
 
-	// 1         1     1   0   PMU_SREF0_ENTER_EN,
+	// 1         1     1   0   PMU_SREF0_ENTER_EN,  <----
 	// 1         1     1   1   PMU_DDRC0_GATING_EN,
 	// 1         1     1   1   PMU_DDRIO0_RET_EN,
 	// 1         0     0   0   PMU_DDRIO0_RET_DE_REQ,
 
-	// 1         1     1   0   PMU_SREF1_ENTER_EN,
+	// 1         1     1   0   PMU_SREF1_ENTER_EN,  <----
 	// 1         1     1   1   PMU_DDRC1_GATING_EN,
 	// 1         1     1   1   PMU_DDRIO1_RET_EN,
 	// 1         0     0   0   PMU_DDRIO1_RET_DE_REQ,
@@ -929,9 +963,10 @@ static void sys_slp_config(void)
 	// 0         0     0   0   PMU_SLP_OUTPUT_CFG,
 	// 0         0     0   0   PMU_MAIN_CLUSTER,
 
+  /*
 	slp_mode_cfg = BIT(PMU_PWR_MODE_EN) |
-		       BIT(PMU_WKUP_RST_EN) | // upstream
-		       BIT(PMU_INPUT_CLAMP_EN) | // upstream
+           BIT(PMU_WKUP_RST_EN) | // upstream
+           BIT(PMU_INPUT_CLAMP_EN) | // upstream
 		       BIT(PMU_OSC_DIS) |
 		       BIT(PMU_ALIVE_USE_LF) |
 		       BIT(PMU_PMU_USE_LF) |
@@ -942,26 +977,43 @@ static void sys_slp_config(void)
 		       BIT(PMU_L2_IDLE_EN) |
 		       BIT(PMU_SCU_PD_EN) |
 		       BIT(PMU_CCI_PD_EN) |
-		       BIT(PMU_PERILP_PD_EN) | // upstream
+           BIT(PMU_PERILP_PD_EN) | // upstream
 		       BIT(PMU_CENTER_PD_EN) |
-           BIT(PMU_SREF0_ENTER_EN) |
+           // BIT(PMU_SREF0_ENTER_EN) | // 77, upstream
 		       BIT(PMU_DDRC0_GATING_EN) |
 		       BIT(PMU_DDRIO0_RET_EN) |
-		       BIT(PMU_DDRIO0_RET_DE_REQ) | // upstream
-           BIT(PMU_SREF1_ENTER_EN) |
+           BIT(PMU_DDRIO0_RET_DE_REQ) | // upstream
+           // BIT(PMU_SREF1_ENTER_EN) | // 77, upstream
 		       BIT(PMU_DDRC1_GATING_EN) |
 		       BIT(PMU_DDRIO1_RET_EN) |
-		       BIT(PMU_DDRIO1_RET_DE_REQ) | // upstream
+           BIT(PMU_DDRIO1_RET_DE_REQ) | // upstream
 		       BIT(PMU_CLK_CENTER_SRC_GATE_EN) |
-		       BIT(PMU_CLK_PERILP_SRC_GATE_EN) | // upstream
+           BIT(PMU_CLK_PERILP_SRC_GATE_EN) | // upstream
 		       BIT(PMU_CLK_CORE_SRC_GATE_EN);
+           */
+
+	slp_mode_cfg = BIT(PMU_PWR_MODE_EN) |
+           BIT(PMU_WKUP_RST_EN) | // upstream
+           BIT(PMU_INPUT_CLAMP_EN) | // upstream
+		       BIT(PMU_L2_FLUSH_EN) |
+		       BIT(PMU_L2_IDLE_EN)
+		       ;
 
 	mmio_setbits_32(PMU_BASE + PMU_WKUP_CFG4, BIT(PMU_GPIO_WKUP_EN));
+
   // enable GPIO0_PA5 negedge wkup
   mmio_setbits_32(PMU_BASE + PMU_WKUP_CFG1, BIT(5)); 
   // enable GPIO0_PA5 negedge interrupt wakeup
   mmio_setbits_32(PMU_BASE + PMU_INT_CON, BIT(PMU_PMU_INT_EN) | BIT(PMU_WKUP_GPIO0_NEG_INT_EN));
   mmio_setbits_32(PMU_BASE + PMU_GPIO0_NEG_INT_CON, BIT(5)); 
+
+  /*
+  // enable GPIO0_PA5 posedge wkup
+  mmio_setbits_32(PMU_BASE + PMU_WKUP_CFG0, BIT(5)); 
+  // enable GPIO0_PA5 posedge interrupt wakeup
+  mmio_setbits_32(PMU_BASE + PMU_INT_CON, BIT(PMU_PMU_INT_EN) | BIT(PMU_WKUP_GPIO0_POS_INT_EN));
+  mmio_setbits_32(PMU_BASE + PMU_GPIO0_POS_INT_CON, BIT(5)); 
+  */
                                                    
 	mmio_write_32(PMU_BASE + PMU_PWRMODE_CON, slp_mode_cfg);
 
@@ -1423,6 +1475,8 @@ void wdt_register_restore(void)
 
 int rockchip_soc_sys_pwr_dm_suspend(void)
 {
+  recover_console();
+  NOTICE("%s: About to suspend sysdomain!\n", __func__);
 	uint32_t wait_cnt = 0;
 	uint32_t status = 0;
 
@@ -1506,6 +1560,7 @@ int rockchip_soc_sys_pwr_dm_suspend(void)
 
 int rockchip_soc_sys_pwr_dm_resume(void)
 {
+  recover_console();
 	uint32_t wait_cnt = 0;
 	uint32_t status = 0;
 
@@ -1606,6 +1661,7 @@ int rockchip_soc_sys_pwr_dm_resume(void)
 
 void __dead2 rockchip_soc_soft_reset(void)
 {
+  recover_console();
 	struct bl_aux_gpio_info *rst_gpio;
 
 	rst_gpio = plat_get_rockchip_gpio_reset();
@@ -1623,6 +1679,7 @@ void __dead2 rockchip_soc_soft_reset(void)
 
 void __dead2 rockchip_soc_system_off(void)
 {
+  recover_console();
 	struct bl_aux_gpio_info *poweroff_gpio;
 
 	poweroff_gpio = plat_get_rockchip_gpio_poweroff();
@@ -1676,6 +1733,8 @@ void rockchip_plat_mmu_el3(void)
 			sram_size, MT_NON_CACHEABLE | MT_RW | MT_SECURE);
 }
 
+__pmusramdata uint32_t boot_mpidr;
+
 void plat_rockchip_pmu_init(void)
 {
 	uint32_t cpu;
@@ -1690,6 +1749,8 @@ void plat_rockchip_pmu_init(void)
 
 	for (cpu = 0; cpu < PLATFORM_CLUSTER_COUNT; cpu++)
 		clst_warmboot_data[cpu] = 0;
+
+  boot_mpidr = read_mpidr_el1() & 0xffff;
 
 	/* config cpu's warm boot address */
 	mmio_write_32(SGRF_BASE + SGRF_SOC_CON(1),
@@ -1752,6 +1813,8 @@ static void cpi_config_sleep(void) {
   gpio_set_pull(5, GPIO_PULL_UP);
   udelay(1);
 
+  return;
+
   // GPIO1_C1 is CPU_B_SLEEP: port = 1, bank = 2(C), id = 1
   // num = 2*8+1 = 17
   // pin = 1 * 32 + 17 = 49
@@ -1769,10 +1832,9 @@ static void cpi_config_sleep(void) {
   // GPIO1_A5 is PMIC_SLEEP_H: port = 1, bank = 0(A), id = 5
   // num = 0 * 8 + 5 = 5
   // pin = 1 * 32 + 5 = 37
-  // XXX maybe this is supposed to be automatic.
-  /*gpio_set_value(37, 1);*/
-  /*gpio_set_direction(37, GPIO_DIR_OUT);*/
-  /*udelay(1);*/
+  // rkbin: set to ap_pwroff
+  mmio_write_32(PMUGRF_BASE + PMUGRF_GPIO1A_IOMUX, 0x04000400);
+  udelay(1);
 
   // GPIO4_C4 is UART TX (with led), port = 4, bank = 2(C), id = 4
   // num = 2 * 8 + 4 = 20

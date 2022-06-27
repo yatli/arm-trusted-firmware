@@ -68,6 +68,21 @@ void bl31_early_platform_setup2(u_register_t arg0, u_register_t arg1,
 
 	VERBOSE("bl31_setup\n");
 
+#define PMUGRF_OS_REG0			0x300
+#define PMUGRF_OS_REG1			0x304
+#define PMUGRF_OS_REG2			0x308
+#define PMUGRF_OS_REG3			0x30c
+
+  uint32_t osreg0 = mmio_read_32(PMUGRF_BASE + PMUGRF_OS_REG0);
+  uint32_t osreg1 = mmio_read_32(PMUGRF_BASE + PMUGRF_OS_REG1);
+  uint32_t osreg2 = mmio_read_32(PMUGRF_BASE + PMUGRF_OS_REG2);
+  uint32_t osreg3 = mmio_read_32(PMUGRF_BASE + PMUGRF_OS_REG3);
+
+  NOTICE("osreg0 = %x\n", osreg0);
+  NOTICE("osreg1 = %x\n", osreg1);
+  NOTICE("osreg2 = %x\n", osreg2);
+  NOTICE("osreg3 = %x\n", osreg3);
+
 	bl31_params_parse_helper(arg0, &bl32_ep_info, &bl33_ep_info);
 }
 

@@ -49,8 +49,6 @@ void disable_pwms(void)
 		mmio_write_32(GRF_BASE + GRF_GPIO4C_IOMUX, val);
 	}
 
-  /* Let's not disable GPIO1C3 (PWM2)... */
-  /*
 	val = mmio_read_32(PMUGRF_BASE + PMUGRF_GPIO1C_IOMUX);
 	if (((val >> PMUGRF_GPIO1C3_IOMUX_SHIFT) &
 		GRF_IOMUX_2BIT_MASK) == PMUGRF_GPIO1C3_IOMUX_PWM) {
@@ -59,7 +57,6 @@ void disable_pwms(void)
 				    PMUGRF_GPIO1C3_IOMUX_SHIFT);
 		mmio_write_32(PMUGRF_BASE + PMUGRF_GPIO1C_IOMUX, val);
 	}
-  */
 
 	val = mmio_read_32(PMUGRF_BASE + PMUGRF_GPIO0A_IOMUX);
 	if (((val >> PMUGRF_GPIO0A6_IOMUX_SHIFT) &
@@ -73,10 +70,6 @@ void disable_pwms(void)
 	/* Disable the pwm channel */
 	pwm_data.enable_bitmask = 0;
 	for (i = 0; i < 4; i++) {
-    // Do not disable PWM2
-    if (i == 2) {
-      continue;
-    }
 		val = mmio_read_32(PWM_BASE + PWM_CTRL(i));
 		if ((val & PWM_ENABLE) != PWM_ENABLE)
 			continue;
@@ -107,15 +100,12 @@ void enable_pwms(void)
 		mmio_write_32(PMUGRF_BASE + PMUGRF_GPIO0A_IOMUX, val);
 	}
 
-  /* Don't touch PWM2 */
-  /*
 	if (pwm_data.iomux_bitmask & PWM2_IOMUX_PWM_EN) {
 		val = BITS_WITH_WMASK(PMUGRF_GPIO1C3_IOMUX_PWM,
 				    GRF_IOMUX_2BIT_MASK,
 				    PMUGRF_GPIO1C3_IOMUX_SHIFT);
 		mmio_write_32(PMUGRF_BASE + PMUGRF_GPIO1C_IOMUX, val);
 	}
-  */
 
 	if (pwm_data.iomux_bitmask & PWM1_IOMUX_PWM_EN) {
 		val = BITS_WITH_WMASK(GRF_GPIO4C6_IOMUX_PWM,

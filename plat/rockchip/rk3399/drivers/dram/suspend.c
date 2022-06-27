@@ -786,6 +786,52 @@ __pmusramfunc void dmc_resume(void)
 	uint32_t channel_mask = 0;
 	uint32_t channel;
 
+  // first chance for fan loop!
+  // set gpio3a0 0x60 to 1
+  // port = 3
+  // bank = 0
+  // num = 0
+  
+  /* port info:
+   *{
+		.clkgate_reg = CRU_BASE + CRU_CLKGATE_CON(31),
+		.pull_base = GRF_BASE + GRF_GPIO3A_P,
+		.port_base = GPIO3_BASE,
+		.pull_enc = {ENC_ZUDR, ENC_ZUDR, ENC_ZUDR, ENC_ZUDR},
+		.clkgate_bit = PCLK_GPIO3_GATE_SHIFT,
+		.max_bank = 3,
+	},*/
+	// uint32_t port = 3;
+	uint32_t num = 0;
+	uint32_t clock_state;
+  uint32_t value = 1;
+
+  //  gpio_get_clock
+	if ((mmio_read_32(CRU_BASE + CRU_CLKGATE_CON(31)) & (1U << PCLK_GPIO3_GATE_SHIFT)) == 0U) {
+		clock_state = 0;
+	} else {
+    mmio_write_32(
+      CRU_BASE + CRU_CLKGATE_CON(31),
+      BITS_WITH_WMASK(0, 1, PCLK_GPIO3_GATE_SHIFT)
+    );
+    clock_state = 1;
+  }
+
+  //  set value
+#define SWPORTA_DR	0x00
+	mmio_clrsetbits_32(
+		GPIO3_BASE + SWPORTA_DR,
+		1 << num,
+		((value == 0) ? 0 : 1) << num
+	);
+
+	//  gpio_put_clock(gpio, clock_state);
+  if (clock_state) {
+    mmio_write_32(
+      CRU_BASE + CRU_CLKGATE_CON(31),
+      BITS_WITH_WMASK(1, 1, PCLK_GPIO3_GATE_SHIFT));
+  }
+
 	/*
 	 * We can't turn off the watchdog, so if we have not turned it on before
 	 * we should not turn it on here.

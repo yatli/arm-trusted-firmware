@@ -11,6 +11,9 @@
 #include <common/debug.h>
 #include <plat/common/platform.h>
 
+#include <lib/mmio.h>
+#include <drivers/delay_timer.h>
+
 /* Set the default maximum log level to the `LOG_LEVEL` build flag */
 static unsigned int max_log_level = LOG_LEVEL;
 
@@ -39,6 +42,23 @@ void tf_log(const char *fmt, ...)
 
 	prefix_str = plat_log_get_prefix(log_level);
 
+  /*
+#define REG_MSK_SHIFT	16
+#define BITS_SHIFT(bits, shift)	(bits << (shift))
+#define GRF_GPIO4B_IOMUX	0xe024
+#define BITS_WITH_WMASK(bits, msk, shift)\
+	(BITS_SHIFT(bits, shift) | BITS_SHIFT(msk, (shift + REG_MSK_SHIFT)))
+#define GRF_IOMUX_2BIT_MASK     0x3
+#define GRF_GPIO4B0_IOMUX_SHIFT      0
+#define GRF_GPIO4B1_IOMUX_SHIFT      2
+  // HACK
+  // bring back uart2 iomux...
+  // 0x2 is uartdbga_sin/sout
+  mmio_write_32(GRF_BASE + GRF_GPIO4B_IOMUX,
+      BITS_WITH_WMASK(0x2, GRF_IOMUX_2BIT_MASK, GRF_GPIO4B0_IOMUX_SHIFT) |
+      BITS_WITH_WMASK(0x2, GRF_IOMUX_2BIT_MASK, GRF_GPIO4B1_IOMUX_SHIFT));
+      */
+
 	while (*prefix_str != '\0') {
 		(void)putchar(*prefix_str);
 		prefix_str++;
@@ -47,6 +67,19 @@ void tf_log(const char *fmt, ...)
 	va_start(args, fmt);
 	(void)vprintf(fmt + 1, args);
 	va_end(args);
+
+  /*
+  // HACK
+  // bring back sdmmc iomux
+  // 0x1 is sdmmc_data0/1
+  for(int i = 0; i < 1000000; ++i) {
+    // hope it works...
+  }
+
+  mmio_write_32(GRF_BASE + GRF_GPIO4B_IOMUX,
+      BITS_WITH_WMASK(0x1, GRF_IOMUX_2BIT_MASK, GRF_GPIO4B0_IOMUX_SHIFT) |
+      BITS_WITH_WMASK(0x1, GRF_IOMUX_2BIT_MASK, GRF_GPIO4B1_IOMUX_SHIFT));
+  */
 }
 
 void tf_log_newline(const char log_fmt[2])

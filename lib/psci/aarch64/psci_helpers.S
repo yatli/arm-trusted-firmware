@@ -126,5 +126,7 @@ endfunc psci_do_pwrup_cache_maintenance
 func psci_power_down_wfi
 	dsb	sy		// ensure write buffer empty
 	wfi
-	no_ret	plat_panic_handler
+loop:
+  b loop
+	// no_ret	plat_panic_handler
 endfunc psci_power_down_wfi
