@@ -39,27 +39,6 @@
 static void cpi_config_sleep(void);
 static void cpi_config_resume(void);
 
-/*extern int console_16550_register(uintptr_t baseaddr, uint32_t clock, uint32_t baud, console_t *console);*/
-/*extern int console_16550_core_init(uintptr_t base, uint32_t clock, uint32_t baudrate);*/
-
-static inline void recover_console(void) {
-  return;
-
-  /*
-  // bring back uart2 iomux...
-  // 0x2 is uartdbga_sin/sout
-  mmio_write_32(GRF_BASE + GRF_GPIO4B_IOMUX,
-      BITS_WITH_WMASK(0x2, GRF_IOMUX_2BIT_MASK, GRF_GPIO4B0_IOMUX_SHIFT) |
-      BITS_WITH_WMASK(0x2, GRF_IOMUX_2BIT_MASK, GRF_GPIO4B1_IOMUX_SHIFT));
-  if (console_is_registered(&pmu_console)) {
-    // try bring back the console...
-    console_16550_core_init(UART2_BASE, 24000000, 115200);
-  } else {
-    console_16550_register(UART2_BASE, 24000000, 115200, &pmu_console);
-  }
-  */
-}
-
 DEFINE_BAKERY_LOCK(rockchip_pd_lock);
 
 static uint32_t cpu_warm_boot_addr;
@@ -685,7 +664,6 @@ static void nonboot_cpus_off(void)
 
 int rockchip_soc_cores_pwr_dm_on(unsigned long mpidr, uint64_t entrypoint)
 {
-  recover_console();
 	uint32_t cpu_id = plat_core_pos_by_mpidr(mpidr);
   INFO("%s(%d)\n", __func__, __LINE__);
 
@@ -702,7 +680,6 @@ int rockchip_soc_cores_pwr_dm_on(unsigned long mpidr, uint64_t entrypoint)
 
 int rockchip_soc_cores_pwr_dm_off(void)
 {
-  recover_console();
 	uint32_t cpu_id = plat_my_core_pos();
   INFO("%s(%d)\n", __func__, __LINE__);
 
@@ -714,7 +691,6 @@ int rockchip_soc_cores_pwr_dm_off(void)
 int rockchip_soc_hlvl_pwr_dm_off(uint32_t lvl,
 				 plat_local_state_t lvl_state)
 {
-  recover_console();
   INFO("%s(%d)\n", __func__, __LINE__);
 	if (lvl == MPIDR_AFFLVL1) {
 		clst_pwr_domain_suspend(lvl_state);
@@ -725,7 +701,6 @@ int rockchip_soc_hlvl_pwr_dm_off(uint32_t lvl,
 
 int rockchip_soc_cores_pwr_dm_suspend(void)
 {
-  recover_console();
 	uint32_t cpu_id = plat_my_core_pos();
 
 	assert(cpu_id < PLATFORM_CORE_COUNT);
@@ -741,7 +716,6 @@ int rockchip_soc_cores_pwr_dm_suspend(void)
 
 int rockchip_soc_hlvl_pwr_dm_suspend(uint32_t lvl, plat_local_state_t lvl_state)
 {
-  recover_console();
   INFO("%s(%d)\n", __func__, __LINE__);
 	if (lvl == MPIDR_AFFLVL1) {
 		clst_pwr_domain_suspend(lvl_state);
@@ -752,7 +726,6 @@ int rockchip_soc_hlvl_pwr_dm_suspend(uint32_t lvl, plat_local_state_t lvl_state)
 
 int rockchip_soc_cores_pwr_dm_on_finish(void)
 {
-  recover_console();
 	uint32_t cpu_id = plat_my_core_pos();
   INFO("%s(%d)\n", __func__, __LINE__);
 
@@ -764,7 +737,6 @@ int rockchip_soc_cores_pwr_dm_on_finish(void)
 int rockchip_soc_hlvl_pwr_dm_on_finish(uint32_t lvl,
 				       plat_local_state_t lvl_state)
 {
-  recover_console();
 	if (lvl == MPIDR_AFFLVL1) {
 		clst_pwr_domain_resume(lvl_state);
 	}
@@ -775,7 +747,6 @@ int rockchip_soc_hlvl_pwr_dm_on_finish(uint32_t lvl,
 
 int rockchip_soc_cores_pwr_dm_resume(void)
 {
-  recover_console();
 	uint32_t cpu_id = plat_my_core_pos();
 
 	/* Disable core_pm */
@@ -786,7 +757,6 @@ int rockchip_soc_cores_pwr_dm_resume(void)
 
 int rockchip_soc_hlvl_pwr_dm_resume(uint32_t lvl, plat_local_state_t lvl_state)
 {
-  recover_console();
   INFO("%s(%d)\n", __func__, __LINE__);
 	if (lvl == MPIDR_AFFLVL1) {
 		clst_pwr_domain_resume(lvl_state);
@@ -993,10 +963,14 @@ static void sys_slp_config(void)
            */
 
 	slp_mode_cfg = BIT(PMU_PWR_MODE_EN) |
-           BIT(PMU_WKUP_RST_EN) | // upstream
+           // BIT(PMU_WKUP_RST_EN) | // upstream
            BIT(PMU_INPUT_CLAMP_EN) | // upstream
+           BIT(PMU_PERILP_PD_EN) | // upstream
+		       BIT(PMU_OSC_DIS) |
 		       BIT(PMU_L2_FLUSH_EN) |
-		       BIT(PMU_L2_IDLE_EN)
+		       BIT(PMU_L2_IDLE_EN) |
+		       BIT(PMU_ALIVE_USE_LF) |
+		       BIT(PMU_PMU_USE_LF)
 		       ;
 
 	mmio_setbits_32(PMU_BASE + PMU_WKUP_CFG4, BIT(PMU_GPIO_WKUP_EN));
@@ -1475,7 +1449,6 @@ void wdt_register_restore(void)
 
 int rockchip_soc_sys_pwr_dm_suspend(void)
 {
-  recover_console();
   NOTICE("%s: About to suspend sysdomain!\n", __func__);
 	uint32_t wait_cnt = 0;
 	uint32_t status = 0;
@@ -1560,7 +1533,6 @@ int rockchip_soc_sys_pwr_dm_suspend(void)
 
 int rockchip_soc_sys_pwr_dm_resume(void)
 {
-  recover_console();
 	uint32_t wait_cnt = 0;
 	uint32_t status = 0;
 
@@ -1661,7 +1633,6 @@ int rockchip_soc_sys_pwr_dm_resume(void)
 
 void __dead2 rockchip_soc_soft_reset(void)
 {
-  recover_console();
 	struct bl_aux_gpio_info *rst_gpio;
 
 	rst_gpio = plat_get_rockchip_gpio_reset();
@@ -1679,7 +1650,6 @@ void __dead2 rockchip_soc_soft_reset(void)
 
 void __dead2 rockchip_soc_system_off(void)
 {
-  recover_console();
 	struct bl_aux_gpio_info *poweroff_gpio;
 
 	poweroff_gpio = plat_get_rockchip_gpio_poweroff();
